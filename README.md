@@ -43,7 +43,7 @@ Bruk decode for JSON, data for bytes, execute for metadata/204 og prepare for ko
 - [Migrering og release](Docs/Migration.md)
 - [Alle offentlige API-deklarasjoner](Docs/API.md)
 
-DocC-catalogs finnes for alle produkter. `bash Tools/build-documentation.sh` genererer API-referanse og DocC-arkiver lokalt, uten publishing. Sentrale håndbokeksempler kompileres i testtargetet.
+DocC-catalogs finnes for alle produkter. `swift Tools/RepositoryTools.swift docs` genererer API-referanse og DocC-arkiver lokalt, uten publishing. Sentrale håndbokeksempler kompileres i testtargetet.
 
 ## Viktige kontrakter
 

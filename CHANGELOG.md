@@ -2,6 +2,8 @@
 
 ## Neste interne 0.3.0 — ikke publisert
 
+- Erstattet repositoryets Python-/shell-verktøy med ett Foundation-basert Swift-verktøy; CI og dokumentasjonskommandoer bruker nå Swift.
+
 - GitHub-klargjøring med ignore-/tekstregler, CI-oppsett, bidragsmaler og publiseringsveiledning. Alle rettigheter forbeholdt Teisrud Development AS.
 
 - Rettet HEAD, cache ved kontobytte, sensitive headers ved redirect og discarded byteantall.

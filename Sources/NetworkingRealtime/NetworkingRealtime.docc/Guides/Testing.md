@@ -43,9 +43,22 @@ Velg en faktisk tilgjengelig simulator; CI velger en available iPhone UUID autom
 
 ## API-/DocC-dokumentasjon
 
-Tools/build-documentation.sh bygger moduler, genererer symbolgraphs/API.md og konverterer hver modules DocC-catalog til et arkiv. Den krever Xcode toolchain og Python 3. Default scratch/output ligger i /tmp; ingen remote publishing skjer. Se API.md for samtlige offentlige declarations. Tools/generate-api-reference.py kan brukes med eksisterende symbolgraphs for å fornye Markdown-snapshot.
+`swift Tools/RepositoryTools.swift docs` bygger moduler, genererer symbolgraphs/API.md og konverterer hver modules DocC-catalog til et arkiv. Verktøyet er skrevet i Swift og krever Xcode toolchain; Python og egne shell-skript brukes ikke. Default scratch/output ligger i /tmp; ingen remote publishing skjer. Se API.md for samtlige offentlige declarations. `swift Tools/RepositoryTools.swift api SYMBOLGRAPHS OUTPUT` kan brukes med eksisterende symbolgraphs for å fornye Markdown-snapshot.
 
 DocC module-overviews peker til tekniske guides. Markdownhåndboken er den komplette bruksguiden; API.md er en generert deklarasjonsreferanse. Ikke edit genererte signaturer for å skjule en API-endring. Sentral eksempel-kode i DocumentationExamples.swift kompilerer sammen med modul-testene; ingen dokumentasjonseksempel kontakter en offentlig backend som del av testen.
+
+Eksempler fra pakkens rot:
+
+```sh
+swift Tools/RepositoryTools.swift sync --check
+swift Tools/RepositoryTools.swift docs --scratch /tmp/networking-doc-build --output /tmp/networking-docs
+swift Tools/RepositoryTools.swift distribution
+swift Tools/RepositoryTools.swift ios-test
+```
+
+`docs --use-shipped-guides` bygger medfølgende guider uten å reparere dem eller oppdatere API.md. `api` krever symbolgraphs for alle fire moduler og avviser ufullstendig extraction. `ios-test` velger en tilgjengelig iPhone i nyeste tilgjengelige iOS-runtime. På GitHub lagres testresultatet under RUNNER_TEMP; lokalt brukes en unik midlertidig resultatmappe.
+
+I en sandkasse som ikke tillater standard module-cache, kan Swift startes med `swift -module-cache-path /tmp/networking-module-cache Tools/RepositoryTools.swift COMMAND`. Dette er kun en lokal kjøreinnstilling.
 
 ## Background-verifikasjon i en faktisk app
 
@@ -75,6 +88,6 @@ Filstore gjenbruker JSON-encoding for uendrede items mellom atomiske writes. Enc
 
 ## Dokumentasjon fra ren distribusjon
 
-DocC/Guides inngår nå i distribusjonen og er genererte kopier av Docs. Rediger bare Docs, og kjør Tools/build-documentation.sh for API-snapshot og oppdatering av kopiene. `python3 Tools/sync-documentation.py --check` avviser manglende, utdaterte og foreldede artikler. Guidene ignoreres ikke av Git og skal følge samme commit/release som koden.
+DocC/Guides inngår nå i distribusjonen og er genererte kopier av Docs. Rediger bare Docs, og kjør `swift Tools/RepositoryTools.swift docs` for API-snapshot og oppdatering av kopiene. `swift Tools/RepositoryTools.swift sync --check` avviser manglende, utdaterte og foreldede artikler. Guidene ignoreres ikke av Git og skal følge samme commit/release som koden.
 
-Tools/check-distribution.sh kopierer kun distribuerbare filer til en tom midlertidig mappe. Den bygger moduler og DocC med warnings-as-errors fra medfølgende guider uten å generere eller reparere guider/API først. CI kjører denne kontrollen på nyere Xcode. En konsument kan derfor bygge katalogen direkte i Xcode uten skjult preprocessing. Byggeskriptet rydder gamle symbolgraphs før extraction slik at fjernede API-er ikke lever videre i artefakter.
+`swift Tools/RepositoryTools.swift distribution` kopierer kun distribuerbare filer til en tom midlertidig mappe. Den bygger moduler og DocC med warnings-as-errors fra medfølgende guider uten å generere eller reparere guider/API først. CI kjører denne kontrollen på nyere Xcode. En konsument kan derfor bygge katalogen direkte i Xcode uten skjult preprocessing. Swift-verktøyet rydder gamle symbolgraphs før extraction slik at fjernede API-er ikke lever videre i artefakter.

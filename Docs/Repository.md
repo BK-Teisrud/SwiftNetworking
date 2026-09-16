@@ -2,6 +2,10 @@
 
 Repositoryet inneholder fire Swift Package-produkter. Ingen eksterne avhengigheter, Git LFS eller submoduler er nødvendige. Teisrud Development AS beholder alle rettigheter; `LICENSE` er en proprietær rettighetsmelding. Bruk og distribusjon til andre må være skriftlig autorisert. Velg et privat repository dersom koden bare skal være tilgjengelig for selskapet og inviterte samarbeidspartnere.
 
+## Swift-verktøy
+
+`Tools/RepositoryTools.swift` bruker bare Foundation og verktøyene som følger med Swift/Xcode. Det inngår ikke i bibliotekproduktene og er ikke en avhengighet for appene. Kjør `swift Tools/RepositoryTools.swift --help` for kommandoene. CI bruker det samme verktøyet for dokumentasjonskontroll og valg/kjøring av iOS-simulator. GitHub krever fortsatt YAML for workflows og Dependabot; dette er konfigurasjon, ikke Python- eller shell-kode.
+
 ## Hva Git skal inneholde
 
 Commit Package.swift, Sources (inkludert alle .docc/Guides), Tests, Docs, Tools, README, CHANGELOG, LICENSE og repository-konfigurasjonen. .gitignore utelater byggprodukter, personlig Xcode-tilstand, lokale credentials og genererte DocC-arkiver. Eksempelkonfigurasjon med syntetiske verdier kan hete .env.example. Ignore-regler fjerner ikke allerede sporede filer eller hemmeligheter fra historikken.
@@ -15,8 +19,8 @@ Opprett et tomt GitHub-repository uten automatisk README, lisens eller gitignore
 ```sh
 git status --short
 git diff --check
-python3 Tools/sync-documentation.py --check
-bash Tools/check-distribution.sh
+swift Tools/RepositoryTools.swift sync --check
+swift Tools/RepositoryTools.swift distribution
 git add --all
 git diff --cached --stat
 git diff --cached --check
