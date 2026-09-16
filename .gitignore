@@ -1,8 +1,51 @@
+# macOS
 .DS_Store
-/.build
-/Packages
+.AppleDouble
+.LSOverride
+._*
+
+# Swift Package Manager: library lockfiles and generated package workspace
+/.build/
+/Packages/
+/Package.resolved
+/.swiftpm/xcode/
+/.swiftpm/security/
+/.swiftpm/configuration/registries.json
+
+# Xcode user state and build products; preserve shared projects and schemes
 xcuserdata/
+*.xcuserstate
 DerivedData/
-.swiftpm/configuration/registries.json
-.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+*.xcarchive/
+*.xcresult/
+*.ipa
+*.dSYM/
+*.dSYM.zip
+
+# Generated documentation (source .docc catalogs and Guides are committed)
+*.doccarchive/
+/documentation-output/
+
+# Local credentials; example configuration may be committed
+.env
+.env.*
+!.env.example
+!.env.sample
 .netrc
+*.p12
+*.p8
+*.key
+*.mobileprovision
+/secrets/
+/credentials/
+
+# Editors and local tooling
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+__pycache__/
+*.py[cod]
+/.cache/
+/tmp/

@@ -1,0 +1,52 @@
+name: Networking
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        xcode: ['16.0', '26.2']
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 Tools/sync-documentation.py --check
+      - run: swift --version
+      - run: swift test
+      - if: matrix.xcode == '26.2'
+        run: xcrun swift-format lint --strict --recursive Package.swift Sources Tests
+      - if: matrix.xcode == '26.2'
+        run: Tools/check-distribution.sh
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run tests on an available iPhone simulator
+        shell: bash
+        run: |
+          simulator_id=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(v["udid"] for k,vs in d["devices"].items() if "iOS" in k for v in vs if "iPhone" in v["name"]))')
+          xcodebuild -scheme Networking-Package -destination "platform=iOS Simulator,id=$simulator_id" -derivedDataPath "$RUNNER_TEMP/networking-derived-data" -resultBundlePath "$RUNNER_TEMP/networking-tests.xcresult" test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-test-results
+          retention-days: 7
+          if-no-files-found: warn
+          path: ${{ runner.temp }}/networking-tests.xcresult

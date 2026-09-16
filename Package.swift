@@ -1,26 +1,28 @@
-// swift-tools-version: 6.2
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
-    name: "Networking",
-    products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
-        .library(
-            name: "Networking",
-            targets: ["Networking"]
-        ),
-    ],
-    targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
-        .target(
-            name: "Networking"
-        ),
-        .testTarget(
-            name: "NetworkingTests",
-            dependencies: ["Networking"]
-        ),
-    ]
+  name: "Networking",
+  platforms: [.iOS(.v17), .macOS(.v13)],
+  products: [
+    .library(name: "Networking", targets: ["Networking"]),
+    .library(name: "NetworkingTransfers", targets: ["NetworkingTransfers"]),
+    .library(name: "NetworkingRealtime", targets: ["NetworkingRealtime"]),
+    .library(name: "NetworkingSync", targets: ["NetworkingSync"]),
+  ],
+  targets: [
+    .target(name: "Networking"),
+    .target(name: "NetworkingTransfers", dependencies: ["Networking"]),
+    .target(name: "NetworkingRealtime", dependencies: ["Networking"]),
+    .target(name: "NetworkingSync"),
+    .testTarget(name: "NetworkingTests", dependencies: ["Networking"]),
+    .testTarget(
+      name: "NetworkingTransfersTests", dependencies: ["Networking", "NetworkingTransfers"]),
+    .testTarget(
+      name: "NetworkingRealtimeTests", dependencies: ["Networking", "NetworkingRealtime"]),
+    .testTarget(name: "NetworkingSyncTests", dependencies: ["NetworkingSync"]),
+    .testTarget(
+      name: "NetworkingIntegrationTests",
+      dependencies: ["Networking", "NetworkingTransfers", "NetworkingRealtime", "NetworkingSync"]),
+  ]
 )
