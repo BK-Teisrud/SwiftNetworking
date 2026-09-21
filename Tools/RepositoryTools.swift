@@ -124,9 +124,9 @@ func generateAPI(symbols root: URL, output: URL) throws {
     throw ToolFailure("No public symbols found for \(module)")
   }
   var lines = [
-    "# Komplett offentlig API-referanse", "",
-    "Generert fra Swift-symbolgraphs. Ikke rediger deklarasjonene manuelt.", "",
-    "Se [håndboken](README.md) for defaults, eksempler, sikkerhetsgrenser og lifecycle. Referansen inkluderer alle offentlige deklarasjoner og eventuelle syntetiserte protokollmedlemmer fra den bygde toolchainen.",
+    "# Complete public API reference", "",
+    "Generated from Swift symbol graphs. Do not edit declarations manually.", "",
+    "See the [handbook](README.md) for defaults, examples, security boundaries, and lifecycle contracts. This reference includes every public declaration and any synthesized protocol members emitted by the active toolchain.",
     "",
   ]
   for module in modules {
@@ -135,7 +135,7 @@ func generateAPI(symbols root: URL, output: URL) throws {
       let b = right.value["pathComponents"] as? [String] ?? []
       return a == b ? left.key < right.key : a.lexicographicallyPrecedes(b)
     }
-    lines += ["## \(module)", "", "\(symbols.count) offentlige symboler.", ""]
+    lines += ["## \(module)", "", "\(symbols.count) public symbols.", ""]
     for (_, symbol) in symbols {
       let names = symbol["names"] as? [String: Any] ?? [:]
       let title = (symbol["pathComponents"] as? [String] ?? [names["title"] as? String ?? ""])

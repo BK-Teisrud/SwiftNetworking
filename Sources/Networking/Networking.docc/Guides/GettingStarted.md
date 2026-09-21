@@ -1,39 +1,33 @@
-# Kom i gang og bruk på tvers av apper
+# Getting started across applications
 
-## Installasjon
+## Installation
 
-I Xcode velger du Add Package Dependencies og legger til:
+In Xcode, choose **Add Package Dependencies** and add:
 
 ```text
 https://github.com/BK-Teisrud/SwiftNetworking.git
 ```
 
-Velg versjon 0.3.0 eller `Up to Next Minor Version` fra 0.3.0, og velg produktene appen trenger. Repositoryet er proprietært; konsumenten og eventuell CI må ha nødvendig tilgang.
+Select version 0.3.0, or **Up to Next Minor Version** from 0.3.0, then select the products your application needs.
 
-For en annen Swift Package bruker du en lokal dependency:
-
-```swift
-// I Package.swift hos konsumenten:
-.package(path: "../Networking")
-// I dependencies for appens target:
-.product(name: "Networking", package: "Networking"),
-.product(name: "NetworkingTransfers", package: "Networking"),
-.product(name: "NetworkingRealtime", package: "Networking"),
-.product(name: "NetworkingSync", package: "Networking")
-```
-
-For en remote Swift Package dependency bruker du:
+From another Swift package:
 
 ```swift
 .package(
     url: "https://github.com/BK-Teisrud/SwiftNetworking.git",
     .upToNextMinor(from: "0.3.0")
 )
+
+// In the target dependencies:
+.product(name: "Networking", package: "SwiftNetworking"),
+.product(name: "NetworkingTransfers", package: "SwiftNetworking"),
+.product(name: "NetworkingRealtime", package: "SwiftNetworking"),
+.product(name: "NetworkingSync", package: "SwiftNetworking")
 ```
 
-Produktnavnene er de samme. REST-only apper trenger bare Networking. Transfers og Realtime avhenger av Networking. Sync er selvstendig; modulene avhenger ikke av hverandre.
+REST-only applications need only Networking. Transfers and Realtime depend on Networking. Sync is independent.
 
-## Første JSON-kall
+## First JSON request
 
 ```swift
 import Foundation
@@ -43,6 +37,7 @@ struct ProductDTO: Decodable, Sendable {
     let id: String
     let title: String
 }
+
 let configuration = try ClientConfiguration(
     baseURL: URL(string: "https://catalog.example.com/api/v1/")!,
     limits: ClientLimits(operationTimeout: 30),
@@ -57,9 +52,9 @@ let product = response.value
 let requestID = response.metadata.requestID
 ```
 
-Bruk decode for JSON, data for bytes og execute for metadata/tom suksess. Ikke lag en kunstig Decodable modell for 204. DTO-til-domene-mapping skjer etter responsen, i appen.
+Use `decode` for JSON, `data` for bytes, and `execute` for metadata or an empty success response. Do not create an artificial `Decodable` type for a 204 response. Map DTOs to domain models in the application after receiving the response.
 
-## Én klient per backend og policy
+## One client per backend and policy
 
 ```swift
 let billing = HTTPClient(configuration: try .init(
@@ -68,24 +63,24 @@ let billing = HTTPClient(configuration: try .init(
 ))
 ```
 
-Klienter er immutable Sendable verdier. De kan deles mellom samtidige tasks. Standardtransporten eier en separat ephemeral URLSession. Ikke opprett en ny REST-klient for hvert kall; behold en klient per backend/policy gjennom en passende appsession.
+Clients are immutable, `Sendable` values and may be shared by concurrent tasks. The default transport owns a separate ephemeral URLSession. Keep one client per backend and policy in an appropriate application session instead of creating a client for every request.
 
-## Plassering i appen
+## Placement in an application
 
 ```text
 View / ViewModel
-    → appens service eller repository
-        → DTO/endpoints + domene-/feilmapping
+    → application service or repository
+        → DTOs/endpoints and domain/error mapping
             → HTTPClient / TransferClient / WebSocketClient / OutboxEngine
-                → transport og lagring
+                → transport and storage
 ```
 
-Appens service-protokoll er vanligvis den beste testgrensen for UI. HTTPTransport er testgrensen for HTTP-regler. Det er ikke nødvendig å samle alle kall på MainActor eller en global actor. UI må selv oppdatere sin MainActor-tilstand etter resultat/progress/events.
+The application service protocol is usually the best UI test boundary. `HTTPTransport` is the test boundary for HTTP behavior. Calls do not need to run on `MainActor`; update UI state on `MainActor` after receiving results, progress, or events.
 
-## Valgfrie moduler
+## Optional modules
 
-- Transfers: velg TransferOptions, URLSessionFileTransferTransport og TransferClient. Bruk HTTPRequest når base/policy og bearer skal brukes, URLRequest når URL-en er eksplisitt og signert.
-- Realtime: velg WebSocketOptions og en makeRequest closure. Behold WebSocketClient mens streamen er aktiv, og kall disconnect ved skjerm-/session-avslutning.
-- Sync: velg privat fileURL, accountID og FileOutboxStore. OutboxEngine tar en deliver closure som beskriver ditt backend-kall og hvordan det bekreftes.
+- Transfers: use `TransferOptions`, `URLSessionFileTransferTransport`, and `TransferClient`. Use `HTTPRequest` when base URL, policy, and bearer authentication should apply; use `URLRequest` for explicit signed URLs.
+- Realtime: provide `WebSocketOptions` and a `makeRequest` closure. Retain the client while its stream is active and disconnect it when the screen or session ends.
+- Sync: choose a private file URL, account ID, and `FileOutboxStore`. The delivery closure describes the real backend call and its durable acknowledgement.
 
-En chatapp kan bruke REST til historikk, Transfers til vedlegg, Realtime til levende meldinger og Sync til en outbox for offline-sending. De fire mekanismene har ulike lifecycle-kontrakter og bør kobles sammen av appens chatservice.
+A chat application might use REST for history, Transfers for attachments, Realtime for live messages, and Sync for offline sending. The application service combines these mechanisms because each has a different lifecycle contract.

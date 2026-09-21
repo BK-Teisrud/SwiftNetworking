@@ -1,60 +1,41 @@
-# Sikkerhet, personvern og tekniske grenser
+# Security, privacy, and technical boundaries
 
-## Transportgrenser
+## Transport boundaries
 
-HTTPClient krever HTTPS, ingen base-user/password/query/fragment og et konfigurert API-prefix. allowLocalHTTP er eksplisitt og bare localhost/127.0.0.1/::1. WebSocket krever wss, med tilsvarende eksplisitt lokal ws-policy. Foreground files krever HTTPS, optional local HTTP. Bakgrunn støtter bare HTTPS og system-managed redirects mot betrodde servere.
+`HTTPClient` requires HTTPS, rejects base URLs with credentials, query, or fragment, and confines paths to the configured API prefix. Local HTTP is an explicit policy limited to loopback hosts. WebSocket requires `wss` with the equivalent explicit local exception. Foreground files require HTTPS unless local testing is enabled; background transfer supports only HTTPS and system-managed redirects to trusted servers.
 
-Ingen defaultkomponent aksepterer "trust all" TLS, deaktiverer certificate validation eller leverer certificate pinning. Appen eier ATS, entitlements, appcontainer, serverkontrakter og eventuell separat pinning-adapter. HTTPTransport/FileTransferTransport/WebSocketConnector/OutboxStore er betrodde utvidelser; Sendable beviser ikke at en adapter respekterer sikkerhetspolicyen.
+No default component trusts all certificates, disables TLS validation, or implements certificate pinning. The application owns ATS, entitlements, container protection, server contracts, and any pinning adapter. Custom transports, connectors, and stores are trusted extensions; `Sendable` does not prove policy compliance.
 
-## HTTP redirects
+## Redirects
 
-Standard reject gjelder autentiserte og uautentiserte requests. sameOriginWithoutCredentials krever tillatt replay, ledig felles totalbudsjett, samme scheme/host/effektiv port, ingen URL-credentials og path innen encoded API-prefix. Target valideres mot traversal.
+Redirects are rejected by default. `sameOriginWithoutCredentials` requires replay permission, a remaining shared send budget, the same scheme, host, and effective port, no URL credentials, and a target within the encoded API prefix.
 
-Forwarding kopierer bare redirectHeaderAllowlist, default Accept/Accept-Language/Content-Type/Content-Encoding. Authorization/Cookie/Proxy-Authorization er reserverte og kan ikke velges som request-/allowlist-headers gjennom konfigurasjon. Sensitive headernavn trekkes også fra allowlisten. Ukjente API-key-/customheaders fjernes. Det er et bevisst brudd med eldre forwarding som beholdt ukjente headers.
+Only explicitly allowed insensitive headers are forwarded. Authorization, Cookie, and Proxy-Authorization are reserved and cannot be added to the allowlist. Sensitive and unknown custom headers are removed. Bearer credentials are not restored after a redirect, and a redirected 401 does not trigger recovery.
 
-301/302 POST og 303 non-HEAD blir GET uten body/Content-Type/Content-Encoding. 307/308 bevarer method/body når replay er bekreftet. Bearer-token gjeninnføres ikke på redirect og 401 etter redirect gir ingen recovery. Flere sends teller mot samme SendBudget.
+Foreground file transport never follows redirects. Apple background sessions always follow redirects, so their manager requires `systemManagedForTrustedServers` and rejects credential or custom headers. Use foreground transfer when origin and credential isolation must be enforced before sending.
 
-Foregroundfiltransport følger aldri redirects. Backgroundmanagerens redirect-callback kan ikke håndheve dette fordi Apples backgroundsessions alltid følger redirections. Den krever eksplisitt systemManagedForTrustedServers og avviser credential/custom headers. Velg foreground når origin-/credential-isolasjon må håndheves før sending. Denne forskjellen må ikke skjules av et felles policy-navn.
+## Cache and accounts
 
-## Cache og konto
+The default memory cache is disabled. Authenticated and known-sensitive requests use cache-bypass policy regardless of configured cache settings. Custom signing adapters must also disable caching when they add credentials.
 
-Standard minnecache er av. Positiv kapasitet og riktig cachePolicy trengs for ufølsomme requests. Autentisert/bekreftet sensitive HTTP bruker reloadIgnoringLocalCacheData og bounded allowsCaching false. Direkte URLSessionTransport requests med Authorization/Cookie caches heller ikke. Custom/key-signing adapters må slå av caching for auth de legger til etter building.
+Account changes require cancellation or generation checks for in-flight operations. Clearing a cache cannot stop an already-sent server request or an old result traveling toward the UI. Keep background identifiers, directories, and outbox account IDs separate per account.
 
-Account changes krever også avbrudd/generasjonssjekk av aktive operasjoner. Cachetømming stopper ikke et allerede sendt serverkall eller et gammelt resultat på vei til UI. Kontospecifikke background IDs/directories og outbox accountID må holdes adskilt.
+## Diagnostics and privacy
 
-## Diagnostikk
+Diagnostics contain method, status, duration, attempt, operation ID, a static label, and event kind. Labels must be fixed insensitive names, never user IDs, URLs, or search strings. Paths, queries, request IDs, headers, and bodies are not logged automatically. The queue is bounded and records dropped events.
 
-DiagnosticEvent inneholder method/statusCode/duration/attempt/operationID/label/kind. operationID er tilfeldig per HTTP-operasjon og korrelerer retry/redirect/terminal event. StaticString diagnosticLabel skal være et fast ufølsomt navn, ikke en bruker-ID, URL eller søkestreng. Attempt 0 brukes for terminal operasjonsfeil; andre events er sends. Kind er response/transportFailure/cancelled/decodingFailure/deadlineExceeded/policyRejected/authenticationFailure/operationFailure.
+Response metadata, error descriptions, bounded error bodies, receipts, and downloaded files may still contain sensitive data when the application reads them. The application owns retention, redaction, export, and file-protection policy.
 
-Duration er ContinuousClock monotontid. RetryClock.now er UTC Date for HTTP-date/retry. Paths/queries/request-ID/headers/body logges ikke automatisk. Queue capacity default 128 pending events; overflow drop-newest øker droppedDiagnosticEvents. Én worker leverer til sink, og en treg sink blokkerer ikke nettkallet. flushDiagnostics er en eksportbarriere, ikke en cancellable UI-venting med egen deadline, og trenger en sink som returnerer.
+## Persistence and resource limits
 
-Metadata.url, error descriptions, HTTPFailure.body og saved response/filer kan fortsatt være sensitive når appen leser dem. Retention, redaction og eksportpolicy eies av appen. Background receipts lagrer ikke URL/headers/error descriptions, men bounded responseBody og downloadfil kan inneholde persondata.
+Outbox JSON is not encrypted. Account binding detects an incorrect account ID but does not protect a compromised file system. Use private Application Support storage, suitable data protection, and explicit deletion and retention rules.
 
-## Persistence og ressurser
+Default limits include 10 MiB HTTP responses, a 16 KiB error prefix, 500 MiB foreground uploads and downloads, 1,000 outbox items, 1 MiB per outbox payload, a 16 MiB encoded outbox file, 1 MiB realtime messages, and 64 realtime events. These limits do not replace MIME, image, domain, or available-disk validation.
 
-Outbox JSON er ikke kryptert. Account binding beskytter feil konto-ID, ikke et kompromittert filsystem. Velg app-private Application Support, passende NSFileProtection/protection-at-rest og delete-/retention-policy. Behold uploadfiler stabile gjennom foreground/background overføringer. Begrens diskbruk; limits garanterer ikke fri diskplass.
+## Intentional exclusions
 
-HTTP response 10 MiB/error prefix 16 KiB er defaults. Foreground file limits er 500 MiB per upload/download. Multipart counts inkluderer framing. Outbox maks 1000 items/1 MiB payload/16 MiB encoded file. Realtime maks 1 MiB per message/64 events. Options gjør dette eksplisitt og bounded; limits er ikke en erstatning for MIME-/image-/domenevalidering.
+The package does not include global request deduplication, a global rate-limit scheduler, an OAuth login flow, Keychain storage, an SSE parser, end-to-end chat encryption, a domain conflict resolver, an encrypted database, a GraphQL schema client, guaranteed exactly-once delivery, or universal background resumption. Implement these concerns at the documented adapter and application boundaries and verify backend-specific workflows with integration tests.
 
-Ferske JSON options er trygge standarder. Custom factories må ikke dele mutable encoder/decoder. @unchecked Sendable-klasser i default delegates bruker lock eller dokumentert serial delegatequeue; ingen appdeler trenger unchecked for å bruke modulene.
+## Shared error classification
 
-## Bevisste avgrensninger
-
-Ingen global request-dedup, global rate-limit scheduler, URLSessionTaskMetrics exporter, OAuth-login, Keychain, SSE-parser, E2E chatkryptering, domeneconflict resolver, encrypted database, GraphQL schema-client, garantert exactly-once eller universell background-resumption inngår. Disse behovene kan implementeres med respektive adapter-/appgrenser. Biblioteket kan brukes på tvers av apper, men backendspesifikke workflows krever faktisk integrasjonstest.
-
-## Felles feilklassifisering
-
-NetworkFailures.category(of: error) gir cancelled, timeout, configuration, policy, authentication, http, encoding, decoding, transport, fileSystem eller other. NetworkingError, AuthenticationError, TransferError og RealtimeError implementerer NetworkFailureClassifying. Rå CancellationError/URLError og kjente Foundation I/O-feil klassifiseres også. Originalfeilen og strukturerte payloads beholdes; kategorien avgjør ikke replay/retry automatisk. Task.isCancelled er fortsatt viktig når en custom adapter kaster en annen feil samtidig med cancellation.
-
-```swift
-catch {
-    switch NetworkFailures.category(of: error) {
-    case .cancelled: break
-    case .timeout: /* vis appens timeout-handling */ break
-    case .authentication: /* la appens Auth-service håndtere */ break
-    default: /* inspiser originalfeil/status/metadata */ break
-    }
-}
-```
-
-Custom network-feil kan implementere NetworkFailureClassifying. Sync er selvstendig: lokale SyncError-cases håndteres direkte, mens HTTP-delivery bruker samme nettverksklassifisering i appens adapter.
+`NetworkFailures.category(of:)` classifies cancellation, timeout, configuration, policy, authentication, HTTP, encoding, decoding, transport, file-system, and other failures without replacing the original structured error. Classification never decides replay or retry automatically. Custom errors may implement `NetworkFailureClassifying`.

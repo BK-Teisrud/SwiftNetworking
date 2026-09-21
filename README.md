@@ -1,17 +1,17 @@
 # Networking
 
-Gjenbrukbare Swift-biblioteker for HTTP/JSON, filoverføring, WebSocket og en vedvarende offline-outbox. Versjon 0.3.0. Swift 6.0+, iOS 17+, macOS 13+. Foundation/URLSession, uten eksterne biblioteksavhengigheter.
+Reusable Swift libraries for HTTP/JSON, file transfers, WebSocket connections, and a persistent offline outbox. Version 0.3.0. Swift 6.0+, iOS 17+, and macOS 13+. Built on Foundation and URLSession with no external package dependencies.
 
-**[Les den komplette håndboken](Docs/README.md)** — installasjon, alle bruksområder, API-kontrakter, eksempler, feil, sikkerhet, app-lifecycle og testing.
+**[Read the complete handbook](Docs/README.md)** for installation, use cases, API contracts, examples, errors, security, application lifecycle, and testing.
 
-| Produkt | Bruk |
+| Product | Purpose |
 | --- | --- |
-| Networking | REST/JSON, rå bytes, metadata, credentials-grense, bounded retry, deadline og diagnostikk |
-| NetworkingTransfers | Upload fra fil, download til fil, streaming multipart-encoding, progress og appintegrert systembakgrunn |
-| NetworkingRealtime | WebSocket events/send, bounded messages/buffer, heartbeat og reconnect |
-| NetworkingSync | Account-bound persisted FIFO outbox, stabile idempotency keys, retry/block/ack |
+| Networking | REST/JSON, raw bytes, response metadata, credential boundaries, bounded retries, deadlines, and diagnostics |
+| NetworkingTransfers | File uploads and downloads, streaming multipart encoding, progress, and application-integrated system background transfers |
+| NetworkingRealtime | WebSocket events and sending, bounded messages and buffers, heartbeat, and reconnection |
+| NetworkingSync | Account-bound persistent FIFO outbox, stable idempotency keys, retry, blocking, and acknowledgement |
 
-Produktene er valgfrie. En REST-only app trenger bare Networking. Transfers og Realtime importerer kjernen. Sync er selvstendig. Modulene kan kombineres av appens service/repository. Ingen globale tokens, domene-DTO-er eller login-UI brukes.
+Each product is optional. A REST-only application only needs Networking. Transfers and Realtime import the core module; Sync is independent. Applications combine the modules in their own services or repositories. The package provides no global tokens, domain DTOs, login UI, or application navigation.
 
 ```swift
 import Foundation
@@ -27,42 +27,42 @@ let response = try await client.decode(
 )
 ```
 
-Bruk decode for JSON, data for bytes, execute for metadata/204 og prepare for kontrollerte adaptere. Store filer bruker Transfers. Realtime-events og offline-delivery har egne lifecycle-kontrakter.
+Use `decode` for JSON, `data` for bytes, `execute` for metadata or 204 responses, and `prepare` for controlled adapters. Use Transfers for large files. Realtime events and offline delivery have separate lifecycle contracts.
 
-## Dokumentasjon
+## Documentation
 
-- [Kom i gang](Docs/GettingStarted.md)
-- [HTTP/JSON, requests, feil, retry og grenser](Docs/HTTP.md)
-- [Autentisering, cache og kontobytte](Docs/Authentication.md)
-- [Filoverføringer og bakgrunn](Docs/Transfers.md)
-- [WebSocket/realtime](Docs/Realtime.md)
-- [Offline/outbox og synkronisering](Docs/Sync.md)
-- [Tredjepartsadaptere og modul-workflows](Docs/Integrations.md)
-- [Sikkerhet og personvern](Docs/Security.md)
-- [Testing og feilsøking](Docs/Testing.md)
-- [Alle offentlige API-deklarasjoner](Docs/API.md)
+- [Getting started](Docs/GettingStarted.md)
+- [HTTP/JSON, requests, errors, retries, and limits](Docs/HTTP.md)
+- [Authentication, caching, and account changes](Docs/Authentication.md)
+- [File transfers and background operation](Docs/Transfers.md)
+- [WebSocket and realtime](Docs/Realtime.md)
+- [Offline outbox and synchronization](Docs/Sync.md)
+- [Third-party adapters and module workflows](Docs/Integrations.md)
+- [Security and privacy](Docs/Security.md)
+- [Testing and troubleshooting](Docs/Testing.md)
+- [Complete public API declarations](Docs/API.md)
 
-DocC-kataloger finnes for alle produkter. Sentrale håndbokeksempler kompileres i testtargetet.
+DocC catalogs are included for every product. Core handbook examples compile as part of the integration test target.
 
-## Viktige kontrakter
+## Important contracts
 
-HTTP bruker HTTPS, avviser redirects som standard og krever eksplisitt replay for sideeffektmetoder. Autentiserte/sensitive HTTP-requests caches ikke. Tillatte redirects forwarder bare en ufølsom header-allowlist. JSONkodere opprettes ferskt og diagnostikk leveres med bounded kø/drop-teller.
+HTTP requires HTTPS, rejects redirects by default, and requires explicit replay permission for methods with side effects. Authenticated or otherwise sensitive requests are not cached. Allowed redirects forward only an insensitive header allowlist. JSON coders are created for each operation, and diagnostics use a bounded queue with a dropped-event counter.
 
-Foregroundfiltransport gjør én send og avviser redirects. Apple-backgroundsessions følger redirects automatisk; backgroundmanageren krever en eksplisitt trusted-server-kontrakt og avviser bearer/API-key/custom headers. Appen eier stable kontoidentifikator, uploadfilretention og OS completion-handler-bridge.
+Foreground file transport performs one send and rejects redirects. Apple background sessions follow redirects automatically, so the background manager requires an explicit trusted-server contract and rejects bearer, API-key, and custom headers. The application owns stable account identifiers, upload-file retention, and the operating system completion-handler bridge.
 
-WebSocket-klienten er en wire-transport, ikke en ferdig chat-/subscriptionprotokoll. Outbox er at-least-once delivery og krever backend-idempotency; appen eier konfliktregler, lokal database/cursor, scheduler og kontolifecycle. Ingen universell exactly-once, OAuth-login, kryptert database eller SSE-parser påstås inkludert.
+The WebSocket client is a wire transport, not a complete chat or subscription protocol. The outbox provides at-least-once delivery and requires backend idempotency; the application owns conflict rules, its local database and cursor, scheduling, and account lifecycle. The package does not claim to provide universal exactly-once delivery, OAuth login, an encrypted database, or an SSE parser.
 
-## Verifikasjon
+## Verification
 
 ```sh
 swift build
 swift test
 ```
 
-Ingen offentlige backends brukes i testsuiten. Lokale macOS-fixtures verifiserer ekte URLSession, cache/kontobytte, filoverføringer og WebSocket-handshake. Testene trenger lokale socketrettigheter i sandkasser. CI dekker minimum Swift 6.0, nyere toolchain og iOS-simulator. Bakgrunn/relaunch må dessuten verifiseres i faktiske apper på enhet.
+The test suite uses no public backends. Local macOS fixtures verify real URLSession behavior, cache and account changes, file transfers, and WebSocket handshakes. Sandboxed environments must permit loopback sockets. CI covers the minimum Swift 6.0 toolchain, a current toolchain, and an iOS simulator. Background relaunch behavior must also be verified in a real application on a physical device.
 
-Gjeldende offentlige API er versjonert som 0.3.0. Før 1.0 kan nye minorversjoner inneholde kildekodebrytende endringer i tråd med Semantic Versioning.
+The current public API is versioned as 0.3.0. Before 1.0, minor releases may contain source-breaking changes in accordance with Semantic Versioning.
 
-## Rettigheter og sikkerhet
+## License and security
 
-Se [sikkerhetsrapportering](SECURITY.md). Copyright © 2026 Teisrud Development AS. Alle rettigheter forbeholdt; se [LICENSE](LICENSE).
+See [security reporting](SECURITY.md). Copyright © 2026 Teisrud Development AS. All rights reserved; see [LICENSE](LICENSE).

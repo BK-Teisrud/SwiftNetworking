@@ -1,16 +1,16 @@
 # ``NetworkingTransfers``
 
-Filbaserte foregroundoverføringer, multipart og appintegrert systembakgrunn.
+File-based foreground transfers, multipart encoding, and application-integrated system background transfers.
 
 ## Overview
 
-Den komplette norske håndboken ligger i Docs/README.md i repositoryet. Den beskriver installasjon, alle bruksområder, defaults, kodeeksempler, adaptere, feil og eksplisitte lifecycle-/sikkerhetsgrenser. Docs/API.md inneholder samtlige offentlige deklarasjoner.
+The complete handbook is available in `Docs/README.md`. It covers installation, use cases, defaults, examples, adapters, errors, and explicit lifecycle and security boundaries. `Docs/API.md` contains every public declaration.
 
-Bakgrunnssesjoner følger redirects automatisk i Apple-systemet og krever eksplisitt betrodde servere. Foreground transport avviser redirects. Appen må integrere OS completion-handler og stable identifier ved relaunch.
+Apple background sessions follow redirects automatically and therefore require explicitly trusted servers. Foreground transport rejects redirects. The application must integrate the operating-system completion handler and retain a stable identifier across relaunches.
 
 ## Topics
 
-### Håndbok
+### Guides
 
 - <doc:Handbook>
 - <doc:GettingStarted>
@@ -24,7 +24,7 @@ Bakgrunnssesjoner følger redirects automatisk i Apple-systemet og krever ekspli
 - <doc:Testing>
 - <doc:API>
 
-### Offentlige symboler
+### Public symbols
 
 - ``TransferClient``
 - ``FileTransferTransport``
@@ -37,6 +37,6 @@ Bakgrunnssesjoner følger redirects automatisk i Apple-systemet og krever ekspli
 - ``BackgroundTransferReceipt``
 - ``BackgroundRedirectPolicy``
 
-### Arkitektur
+### Design
 
 - <doc:Architecture>

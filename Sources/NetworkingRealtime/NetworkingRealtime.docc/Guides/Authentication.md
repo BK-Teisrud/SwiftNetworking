@@ -1,21 +1,21 @@
-# Autentisering, kontosession og cache
+# Authentication, account sessions, and caching
 
 ## CredentialProvider
 
-Protocol krever bearerToken() og recover(rejectedToken:) async throws -> String. Appens Auth-lag eier login, Keychain/tokenlagring, expiry og koordinering. Networking starter aldri interaktiv innlogging.
+`CredentialProvider` supplies a bearer token and may recover once after a rejected token. The application's authentication layer owns login, Keychain storage, expiry, refresh deduplication, deadlines, and account-generation checks. Networking never starts interactive login.
 
 ```swift
-import Foundation
-import Networking
-
 actor AppCredentials: CredentialProvider {
     private var token: String
     private let refresh: @Sendable (String) async throws -> String
+
     init(token: String, refresh: @escaping @Sendable (String) async throws -> String) {
         self.token = token
         self.refresh = refresh
     }
+
     func bearerToken() async throws -> String { token }
+
     func recover(rejectedToken: String) async throws -> String {
         if token != rejectedToken { return token }
         token = try await refresh(rejectedToken)
@@ -24,32 +24,26 @@ actor AppCredentials: CredentialProvider {
 }
 ```
 
-Dette er en enkel adapter, ikke en komplett refresh-koordinator. Actor-reentrancy gjør at to recover-kall kan starte to refresh-kall. Produksjonens Auth-lag må deduplisere refresh, eksempelvis gjennom en delt in-flight refresh-task, og kontrollere token-/konto-generasjon før nytt token installeres. En delt refresh må ha sin egen avgrensede deadline og en definert cancellation-kontrakt.
+This minimal adapter does not deduplicate concurrent refreshes. Production authentication code should share an in-flight refresh task and verify the account generation before installing a new token.
 
-Tokenet valideres som bearer token-syntaks og sendes bare ved requiresAuthentication. Manglende provider eller ugyldig token feiler før sending. Recovery skjer høyst én gang per HTTP-operasjon, ved 401, hvis replay er tillatt og totalbudsjettet har plass. 403 fornyer ikke. Recovery skjer ikke etter redirect. Kast AuthenticationError for ønsket strukturert kategori; andre provider-errors blir providerFailure. Cancellation/URLError.cancelled bevares som CancellationError.
+Bearer syntax is validated before sending. Recovery occurs at most once per operation after a 401, only when replay is permitted and the total send budget has capacity. A 403 does not refresh. Recovery is disabled after a redirect. Cancellation remains `CancellationError`.
 
-## Kontobytte og logout
+## Account changes and logout
 
-Autentiserte HTTPClient-requests bruker reloadIgnoringLocalCacheData og allowsCaching false, uansett cachePolicy. Dette gjelder også kjent sensitive header-navn; standard sensitiveHeaderNames er X-API-Key og API-Key, og egne navn legges til eksplisitt. Default URLSession blokkerer dessuten cache for en direkte request med Authorization eller Cookie. Legacy/custom transport-adaptere må respektere bounded options-kontrakten.
+Authenticated requests and requests with known sensitive headers bypass caching. `URLSessionTransport.clearCache()` removes cached responses, while `invalidateAndCancel()` permanently shuts down that transport instance.
 
-Dette hindrer gjenbruk av cacheable respons fra en tidligere bearer-konto. Minnecache er fortsatt tilgjengelig for ufølsomme, uautentiserte kall. URLSessionTransport.clearCache() fjerner cached responses, og invalidateAndCancel() avslutter den transportinstansen permanent.
+Logout requires more than clearing a cache:
 
-Logout er større enn cachetømming:
+1. Advance the application's account generation and reject results from the old account.
+2. Cancel old UI and service tasks and disconnect WebSockets.
+3. Cancel the old outbox flush and select a store with the new account ID.
+4. Cancel account-specific background transfers and classify late callbacks as old-account data.
+5. Clear the cache or create a new client, transport, and credential adapter.
 
-1. Endre appens kontogenerasjon og avslutt/discard resultater fra gammel konto.
-2. Avbryt gamle UI-/service tasks og WebSocketClient.disconnect().
-3. Stopp gammel OutboxEngine flush via task cancellation; velg ny accountID/store.
-4. cancelAll på kontoens BackgroundTransferManager og håndter evt. sent leverte completions som gammel kontos data.
-5. Tøm cache eller lag en ny klient/transport og ny Auth-adapter for den nye kontoen.
+Cancellation cannot undo a server action that already completed.
 
-En allerede utført serverhandling kan ikke rulles tilbake ved task cancellation. Appen må skille en avbrutt lokal venting fra backendens faktiske tilstand.
+## Optional modules
 
-## Auth i de valgfrie modulene
+Transfers prepared from `HTTPRequest` use the HTTP client's bearer provider, but file transfer performs one send without automatic 401 recovery. WebSocket request creation runs for each connection and should obtain a current token. Background transfers reject bearer, API-key, and cookie headers because system sessions follow redirects; use tightly scoped presigned URLs for trusted servers.
 
-TransferClient med HTTPRequest bruker HTTPClient.prepare og bearer provider. Filoverføring er én send, uten automatisk 401-recovery/replay. Appen kan få nytt token og starte på nytt når serverkontrakten tillater det.
-
-WebSocketClient.makeRequest kjøres ved hver forbindelse/reconnect. Hent et gyldig token der. WebSocketConnector bruker eksplisitt wss URLRequest og legger ikke til base-/auth-headers. Ingen automatisk refresh ved avvist handshake skjer i websocketmodulen.
-
-BackgroundTransferManager tillater ikke bearer/API-key/Cookie-headers fordi systembakgrunn følger redirects automatisk. Bruk en kontrollert presignert URL fra en betrodd server, eller foreground transfers for headerbasert auth. OS-et kan lagre requests/resume-tilstand; bruk app-private storage og tokens med passende scope/levetid.
-
-Outbox skal lagre domenepayload og stabil idempotency key, ikke access-/refresh-tokens. Deliver henter gjeldende credentials ved sending. En accountID-grense beskytter køene mot utilsiktet krysslevering, men krypterer ikke filen og autentiserer ikke kontoen.
+Outbox payloads must contain domain data and stable idempotency keys, never access or refresh tokens. The delivery closure obtains current credentials when it sends.
