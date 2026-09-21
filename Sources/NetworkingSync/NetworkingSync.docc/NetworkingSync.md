@@ -1,16 +1,16 @@
 # ``NetworkingSync``
 
-Vedvarende kontoavgrenset FIFO outbox med at-least-once delivery.
+Persistent account-bound FIFO outbox with at-least-once delivery.
 
 ## Overview
 
-Den komplette norske håndboken ligger i Docs/README.md i repositoryet. Den beskriver installasjon, alle bruksområder, defaults, kodeeksempler, adaptere, feil og eksplisitte lifecycle-/sikkerhetsgrenser. Docs/API.md inneholder samtlige offentlige deklarasjoner.
+The complete handbook is available in `Docs/README.md`. It covers installation, use cases, defaults, examples, adapters, errors, and explicit lifecycle and security boundaries. `Docs/API.md` contains every public declaration.
 
-App/backend eier deduplisering og konfliktregler. Ingen exactly-once-garanti, kryptert database eller automatisk connectivity-scheduler inngår.
+The application and backend own deduplication and conflict rules. The module provides no exactly-once guarantee, encrypted database, or automatic connectivity scheduler.
 
 ## Topics
 
-### Håndbok
+### Guides
 
 - <doc:Handbook>
 - <doc:GettingStarted>
@@ -24,7 +24,7 @@ App/backend eier deduplisering og konfliktregler. Ingen exactly-once-garanti, kr
 - <doc:Testing>
 - <doc:API>
 
-### Offentlige symboler
+### Public symbols
 
 - ``OutboxEngine``
 - ``OutboxStore``
@@ -34,6 +34,6 @@ App/backend eier deduplisering og konfliktregler. Ingen exactly-once-garanti, kr
 - ``SyncReport``
 - ``SyncError``
 
-### Arkitektur
+### Design
 
 - <doc:Architecture>

@@ -1,9 +1,9 @@
-# Rapportering av sikkerhetsproblemer
+# Security policy
 
-Ikke legg tokens, private nøkler, personopplysninger eller detaljer om en urettet sårbarhet i offentlige issues, pull requests eller testlogger.
+Do not include tokens, private keys, personal data, or details of an unpatched vulnerability in public issues, pull requests, or test logs.
 
-Bruk GitHubs private vulnerability reporting dersom repositoryets eier har aktivert dette under Settings → Security. Ellers kontakt Teisrud Development AS gjennom en allerede etablert privat kontaktkanal. Ingen egen sikkerhetsadresse er konfigurert her.
+Report vulnerabilities through GitHub Private Vulnerability Reporting under the repository's Security tab. If that channel is unavailable, contact the repository owner privately before publishing details.
 
-Oppgi berørt versjon/commit, forventet og faktisk oppførsel, en minimal reproduksjon med syntetiske data og mulig konsekvens. Se [sikkerhetskontraktene](Docs/Security.md) for pakkens grenser.
+Include the affected version or commit, expected and actual behavior, a minimal reproduction using synthetic data, and the potential impact. See the [security contracts](Docs/Security.md) for the package's boundaries.
 
-Sikkerhetsrettelser prioriteres for den nyeste publiserte 0.x-versjonen. Det gis ingen langsiktig støttegaranti for eldre 0.x-versjoner.
+Security fixes are prioritized for the latest published 0.x version. No long-term support guarantee is provided for older 0.x versions.

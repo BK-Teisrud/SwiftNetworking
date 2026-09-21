@@ -62,11 +62,11 @@ private func client(
     baseURL: URL(string: "https://example.com/api/v1/")!,
     defaultHeaders: ["Accept": "application/json", "X-Test": "default"])
   let request = HTTPRequest(
-    method: .post, path: "/users/Åse Smith",
+    method: .post, path: "/users/Zoë Smith",
     query: [.init(name: "tag", value: "a+b & c"), .init(name: "tag", value: "two")],
     headers: ["x-test": "override"], body: .json(Model(name: "Ada")), idempotencyKey: "key")
   let built = try RequestBuilder(configuration: config).build(request)
-  #expect(built.url?.path == "/api/v1/users/Åse Smith")
+  #expect(built.url?.path == "/api/v1/users/Zoë Smith")
   #expect(built.url?.absoluteString.contains("%2B") == true)
   #expect(
     URLComponents(url: built.url!, resolvingAgainstBaseURL: false)?.queryItems == request.query)

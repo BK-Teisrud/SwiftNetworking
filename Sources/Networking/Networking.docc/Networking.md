@@ -1,14 +1,14 @@
 # ``Networking``
 
-HTTP- og JSON-kjernen for avgrensede REST-operasjoner.
+The HTTP and JSON core for bounded REST operations.
 
 ## Overview
 
-Den komplette norske håndboken ligger i Docs/README.md i repositoryet. Den beskriver installasjon, alle bruksområder, defaults, kodeeksempler, adaptere, feil og eksplisitte lifecycle-/sikkerhetsgrenser. Docs/API.md inneholder samtlige offentlige deklarasjoner.
+The complete handbook is available in `Docs/README.md`. It covers installation, use cases, defaults, examples, adapters, errors, and explicit lifecycle and security boundaries. `Docs/API.md` contains every public declaration.
 
 ## Topics
 
-### Håndbok
+### Guides
 
 - <doc:Handbook>
 - <doc:GettingStarted>
@@ -22,7 +22,7 @@ Den komplette norske håndboken ligger i Docs/README.md i repositoryet. Den besk
 - <doc:Testing>
 - <doc:API>
 
-### Offentlige symboler
+### Public symbols
 
 - ``HTTPClient``
 - ``HTTPRequest``
@@ -41,6 +41,6 @@ Den komplette norske håndboken ligger i Docs/README.md i repositoryet. Den besk
 - ``NetworkingDiagnostics``
 - ``DiagnosticEvent``
 
-### Arkitektur
+### Design
 
 - <doc:Architecture>

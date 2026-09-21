@@ -1,19 +1,15 @@
-# Offline, outbox og synkronisering
+# Offline operation, outbox, and synchronization
 
-## Hva Sync løser
-
-NetworkingSync leverer en vedvarende kontoavgrenset outbox og en FIFO delivery-engine. Handlinger kan legges i kø offline, overleve relaunch og prøves igjen med samme idempotency key. Den overvåker ikke connectivity automatisk og har ikke en universell database-/merge-protokoll.
+NetworkingSync provides a persistent account-bound outbox and a FIFO delivery engine. Operations can survive offline periods and relaunch while retaining the same idempotency key. It does not monitor connectivity or provide a universal database merge protocol.
 
 ```swift
-import Foundation
-import NetworkingSync
-
-let privateFile = URL(fileURLWithPath: "/path/in/app/container/account-one/outbox.json")
-let store = try FileOutboxStore(fileURL: privateFile, accountID: "account-one")
+let store = try FileOutboxStore(
+    fileURL: URL(fileURLWithPath: "/path/in/app/container/account-one/outbox.json"),
+    accountID: "account-one"
+)
 let outbox = try OutboxEngine(accountID: "account-one", store: store) { item in
-    // Decode ditt eget commandformat fra item.payload.
-    // Send med gjeldende Auth og item.idempotencyKey.
-    // Returner acknowledged bare ved backendens faktiske bekreftelse.
+    // Decode the application's command, send it with current credentials,
+    // and acknowledge only after the backend's durable confirmation.
     _ = item
     return .acknowledged
 }
@@ -21,54 +17,30 @@ let id = try await outbox.enqueue(payload: Data("synthetic-command".utf8))
 let report = try await outbox.flush()
 ```
 
-Denne illustrative closure må erstattes av appens faktiske delivery. Å returnere acknowledged uten å sende sletter handlingen fra køen. Se Integrations.md for HTTP-binding og DocumentationExamples.swift for kompilerbare konstruktorer.
+Returning `acknowledged` without sending deletes the operation. See [Integrations](Integrations.md) for an HTTP binding.
 
-## OutboxItem og lagring
+## Storage contract
 
-OutboxItem har id UUID, accountID, idempotencyKey, payload Data, createdAt, attempts, notBefore og optional blockedReason. Payload/key/createdAt er immutable identitet. Store-update får ikke endre dem. Retry bruker samme key; en tapt respons kan bety at serveren allerede har utført handlingen.
+An item contains its UUID, account ID, stable idempotency key, payload, creation date, attempt count, next eligible date, and optional blocked reason. Identity fields cannot change during an update.
 
-FileOutboxStore har versioned JSON-envelope, accountID-sjekk og atomic file-write. Første tilgang laster og validerer filen til et actor-eid snapshot. Hver insert/update/remove skriver atomisk før det nye snapshot publiseres. Mislykket write endrer ikke synlig kø. Concurrent insert på samme store mister ikke hverandres writes. IDs og idempotencyKeys er unike blant pending items. Reopening med en annen accountID gir accountMismatch, ikke levering til ny konto.
+`FileOutboxStore` uses a versioned JSON envelope, account validation, and atomic writes. Failed writes do not modify the visible queue. IDs and idempotency keys are unique among pending items. Opening a file with another account ID fails rather than delivering it to that account.
 
-| Storegrense | Default |
+| Limit | Default |
 | --- | --- |
-| maximumItems | 1000 |
-| maximumPayloadBytes | 1 MiB per item |
-| maximumFileBytes | 16 MiB, inkludert JSON/base64-overhead |
+| Items | 1,000 |
+| Payload | 1 MiB per item |
+| Encoded file | 16 MiB including JSON and Base64 overhead |
 
-Filen må ligge i app-private persistent storage, eksempelvis Application Support. Én instance/writer per file. Dette er ikke en cross-process database, filkoordinator for flere app extensions eller encrypted store. Bruk en database-adapter til OutboxStore hvis appen trenger transaksjoner på flere tabeller, bedre skalering eller extensions. Custom stores må gjøre mutations atomiske og bevare FIFO/identitet/account-kontrakt. nextItem returnerer hodet; defaultimplementasjonen bruker items.first, mens filstore bruker snapshot. Eksterne filendringer støttes ikke mens store-instance lever. Reopprett instance etter eksplisitt reparasjon/migrering.
+Store the file in private persistent application storage. The store is not a cross-process database, encrypted storage, or a coordinator for multiple extensions. Corrupt data fails explicitly and is never silently deleted.
 
-Bounds, finite dates, ikke-negativ attempts og key-kontroll valideres. Corrupt JSON/version/duplicates feiler; engine sletter ikke automatisk filen som en "recovery". Appen må håndtere, migrere, bevare for feilsøking eller eksplisitt rydde sin egen data. Det finnes ingen automatisert schema migration utover envelope-versionkontroll.
+## Delivery contract
 
-## Delivery og ordering
+- `acknowledged` removes an item after durable server confirmation.
+- `retry(after:)` persists the next date and increments failed attempts.
+- `blocked(reason:)` records an application-defined reason and stops the flush.
 
-SyncDisposition:
+Unknown delivery errors receive bounded exponential delay. Cancellation preserves the item. Only acknowledgement advances to the next item, preserving FIFO order. The default attempt limit is 10 and the default maximum operations per flush is 100. Only one flush or maintenance operation runs at a time.
 
-- acknowledged: serveren har bekreftet; item fjernes.
-- retry(after: seconds): persistér neste tidspunkt og øk failed-attempt count. Delay må være finite, 0–86 400 s.
-- blocked(reason:): persistér appvalgt grunn og stopp denne flushen.
+Cancellation can occur after the backend performed an action but before local removal. The backend must therefore implement real idempotency. This is at-least-once delivery, not exactly-once transport.
 
-Unknown delivery-errors gir retry med exponentiell delay (1 s, 2 s, …, capped beregning); cancellation gir CancellationError og item beholdes. Ingen error descriptions/tokens persisteres automatisk. reason er eksplisitt appdata og kan være sensitivt hvis appen velger det.
-
-Engine maximumAttempts er 10 som default. Ved nok failed retries markeres item blockedReason attemptLimit. flush(maximumOperations:) er 100 som default. Kun acknowledged fortsetter til neste item i samme flush. Retry/blocked/notBefore stopper ved hodet og bevarer ordering. Et blocked første item stanser dermed senere items; dette er bevisst for sekvensavhengige commands.
-
-OutboxEngine har én aktiv flush. Et samtidig flush-kall returnerer alreadyRunning true og gjør ingen ekstra levering. Enqueue kan fortsatt foregå via atomic store. retryBlocked/discard er maintenance-operasjoner og avvises mens flush/maintenance er aktiv. pending leser aktuelle items. retryBlocked(id:) resetter attempts/blocked og setter notBefore til now. discard(id:) er appens eksplisitte beslutning om å slette en handling.
-
-SyncReport har acknowledged/deferred/blocked og alreadyRunning. Deferred er en head-operasjon som ikke ble levert nå, ikke total kølengde. Bruk pending for full status. Ingen automatisk timer/scheduler opprettes for notBefore.
-
-## Cancellation og backend-idempotency
-
-Cancellation sjekkes før delivery og etter resultatet før lagringsmutasjon. Hvis serveren utførte handlingen og tasken deretter ble cancelled, kan item fortsatt ligge i kø. Neste levering må derfor være sikker gjennom serverens idempotency-kontrakt. Dette er at-least-once delivery, ikke exactly-once transport. Å legge en tilfeldig key-header til en backend som ignorerer den skaper ingen dedup-garanti.
-
-Deliver må være kooperativ og ha et passende nettverks-/Auth-budsjett. En SyncEngine-flush har ikke sin egen hard deadline; appen kan cancel tasken, og HTTP-delivery kan bruke HTTPClient.operationTimeout. RetryPolicy og outbox-retry må samordnes for å unngå for mange sends per persisted forsøk.
-
-## Appens offline-koordinator
-
-Kall flush ved passende app-/network-signaler, foreground, eksplisitt retry eller egen scheduler. Reachability er et hint, ikke bevis på at serveren er tilgjengelig. Opprett en egen store/accountID per konto og stopp gammel delivery før logout. Ikke lagre tokens i payload.
-
-For filuploads lagres en persistent lokal filreferanse/hash i payload, ikke hele store binære vedlegget. Behold filen til serverack, og bruk et klart totrinnsløp hvis upload og message/create er separate operasjoner. Appen må også eie lokal optimistic UI og bekrefte/markere failed handlinger.
-
-Download-sync trenger servercursor/version/checkpoint og en lokal transaksjon som installerer både data og cursor. Konfliktløsning kan være server-wins/client-wins/manual/domain-merge; det kan ikke velges korrekt for alle apper av en HTTP-pakke. Denne versjonen leverer ikke en ferdig snapshot-/cursor-store, CRDT eller cross-device merge-motor. Disse grenser er en del av kontrakten, ikke skjult behovsdekning.
-
-OutboxClock har bare now og kan injiseres for scheduling-tester. SystemOutboxClock bruker Date. NetworkingSync har ingen HTTP-modulavhengighet.
-
-Filstore gjenbruker JSON-encoding for uendrede items mellom atomiske writes. Encoding-cache og snapshot oppdateres sammen først når write lykkes; version-1 filformatet beholdes.
+The application decides when to flush, coordinates HTTP and outbox retry budgets, separates account stores, and stops old delivery at logout. For attachments, persist a stable file reference rather than the binary payload and retain the file until server acknowledgement. Download synchronization requires a server cursor and an application-owned local transaction. Conflict strategy remains a domain decision.

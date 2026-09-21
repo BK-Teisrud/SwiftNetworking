@@ -1,12 +1,12 @@
-# Komplett offentlig API-referanse
+# Complete public API reference
 
-Generert fra Swift-symbolgraphs. Ikke rediger deklarasjonene manuelt.
+Generated from Swift symbol graphs. Do not edit declarations manually.
 
-Se [håndboken](README.md) for defaults, eksempler, sikkerhetsgrenser og lifecycle. Referansen inkluderer alle offentlige deklarasjoner og eventuelle syntetiserte protokollmedlemmer fra den bygde toolchainen.
+See the [handbook](README.md) for defaults, examples, security boundaries, and lifecycle contracts. This reference includes every public declaration and any synthesized protocol members emitted by the active toolchain.
 
 ## Networking
 
-280 offentlige symboler.
+280 public symbols.
 
 ### AuthenticationError
 
@@ -1765,7 +1765,7 @@ func send(_ request: URLRequest, redirectPolicy: RedirectPolicy, options: HTTPTr
 
 ## NetworkingTransfers
 
-114 offentlige symboler.
+114 public symbols.
 
 ### BackgroundReceiptIssue
 
@@ -2486,7 +2486,7 @@ func upload(_ request: URLRequest, from file: URL, progress: ((TransferProgress)
 
 ## NetworkingRealtime
 
-45 offentlige symboler.
+45 public symbols.
 
 ### RealtimeError
 
@@ -2770,7 +2770,7 @@ let reconnectBaseDelay: Double
 
 ## NetworkingSync
 
-64 offentlige symboler.
+64 public symbols.
 
 ### FileOutboxStore
 

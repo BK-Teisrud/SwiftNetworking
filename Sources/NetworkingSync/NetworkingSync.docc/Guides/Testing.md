@@ -1,34 +1,28 @@
-# Testing og feilsøking
-
-## Vanlige kommandoer
+# Testing and troubleshooting
 
 ```sh
 swift build
 swift test
 ```
 
-Tests bruker ingen offentlige servere. macOS inkluderer lokale 127.0.0.1 fixtures for URLSession redirects, cache/kontobytte, timeout/cancellation, filupload/download og WebSocket-handshake. Sandkasser må tillate loopback sockets. Disse testene er macOS-only, mens deterministic module-/HTTPtests også kjøres på simulator.
+Tests contact no public server. macOS integration tests use loopback fixtures for redirects, caching, account changes, timeouts, cancellation, file transfers, and WebSocket handshakes. Sandboxes must permit loopback sockets. Deterministic module tests also run on an iOS simulator.
 
-## Testgrenser
+## Test boundaries
 
-| Grense | Bruk |
+| Boundary | Use |
 | --- | --- |
-| HTTPTransport | Returner kontrollerte HTTPResponse/URLError steps og registrer requests |
-| RetryClock/jitter | Fast UTC now og observerbare cancellable waits |
-| CredentialProvider | Test manglende token, invalid syntax og recovery |
-| NetworkingDiagnostics | Registrer events; flush før deterministic assertions |
-| FileTransferTransport | Test appens fileworkflow uten nettverk; public result/progress initializers finnes |
-| WebSocketConnector/Connection | Simuler handshake-failure, meldinger, ping, send og close |
-| OutboxClock | Fast UTC now uten HTTP-avhengighet |
-| OutboxStore | Atomic account-bound lagring eller testdobbel; behold ID/key/payload/order |
+| `HTTPTransport` | Return controlled responses or errors and record requests |
+| `RetryClock` and jitter | Use fixed UTC time and observable cancellable waits |
+| `CredentialProvider` | Exercise missing, invalid, rejected, and recovered tokens |
+| `NetworkingDiagnostics` | Record events and flush before deterministic assertions |
+| `FileTransferTransport` | Test file workflows without a network |
+| `WebSocketConnector` | Simulate handshakes, messages, pings, sends, and close |
+| `OutboxClock` | Control scheduling time |
+| `OutboxStore` | Test atomic account-bound persistence and identity preservation |
 
-Custom transports skal gjøre én send per kall, returnere redirects til HTTPClient, respektere bounded options og cancellation. Legacy bridge begrenser etter adapterens nedlasting og kan ikke stoppe et allerede ukontrollert buffer. Verify custom adapters separately.
+Custom transports must perform one send, expose redirects to `HTTPClient`, respect bounded options, and cooperate with cancellation. Test crash and restart with the same outbox file, idempotency key, and duplicate-ack backend behavior. Test realtime overflow and a slow consumer, not only successful connection.
 
-Outbox crash-/restart-test bør reopen samme file/accountID, bekrefte samme idempotency key etter retry og kontrollere duplicate-ack-kontrakt på backend. Simuler 409/manualblocked, tapt respons, logout, corrupt store og kapasitetsgrense. Kun én engine skal eie delivery for samme store/account.
-
-Realtime test både fast recovery og consumer som ikke klarer bufferen. Size/overflow skal være terminale og ingen send skal replayes automatisk. Test backendens handshake/subscription/ack/cursor i appintegrasjon, ikke bare transportens connected-event.
-
-## Simulator og enhet
+## Simulator and physical device
 
 ```sh
 xcodebuild -scheme Networking-Package \
@@ -36,22 +30,20 @@ xcodebuild -scheme Networking-Package \
   -derivedDataPath /tmp/networking-derived-data test
 ```
 
-Velg en faktisk tilgjengelig simulator. En nyere simulatorruntime er ikke en runtime-test på iOS 17 eller på fysisk enhet.
+Use an installed simulator. A current simulator runtime does not verify the iOS 17 minimum or physical-device behavior.
 
-## Background-verifikasjon i en faktisk app
+Background transfer lifecycle must be verified in a real application on a physical device: relaunch, completion-handler bridging, receipt recovery without active UI, file retention, expired presigned URLs, cancellation, force quit, and network transitions.
 
-Verifiser stable identifier/account directory ved relaunch, OS handleEvents completion bridge, receipt recovery uten aktiv UI, filretention, expired presigned URL, cancellation, force-quit og nettverksovergang. System-daemon/background lifecycle kan ikke bevises av en ren SwiftPM mock eller en enkelt foreground URLSession-test. En fysisk enhet og dine faktiske serverkontrakter er nødvendig før et apprelease som avhenger av det.
+## Troubleshooting
 
-## Feilsøking
+- HTTP 401: inspect authentication configuration and replay policy. Unsafe POST requests do not refresh automatically.
+- Rejected redirect: inspect the reason, status, total budget, and API prefix.
+- Empty or invalid JSON: inspect request ID, status, coding path, and decoding kind. Use `execute` for 204.
+- Rate limiting: honor `Retry-After`; never shorten the server's minimum delay.
+- Missing cache hit: authenticated and sensitive requests intentionally bypass caching.
+- `responseTooLarge`: use Transfers for large files or deliberately raise a known bounded JSON limit.
+- Stalled outbox: inspect the head item's block reason, next date, and attempt count.
+- `bufferOverflow`: reduce event work, coalesce updates, or increase a justified capacity.
+- Missing background UI update: read persistent receipts and complete the OS callback only after the session-finished event.
 
-- HTTP 401: sjekk requiresAuthentication/provider og token-validity. ReplayUnsafe POST fornyes ikke automatisk. Header-/Basic-adapter bruker egen Auth-kontrakt.
-- Redirect rejected: les RedirectFailure.reason/status, totalbudget og prefix. Ikke slå på forwarding for å omgå en feil URL.
-- Tom/ugyldig JSON: les metadata.requestID/status og DecodingFailure.codingPath/kind. Bruk execute for 204.
-- Rate limit: respekter Retry-After; maximumDelay betyr maksimum du vil vente, ikke en kortere serverdelay.
-- Cache virker ikke: positiv memoryCacheBytes og passende cachePolicy trengs; auth/sensitive requests caches bevisst ikke.
-- ResponseTooLarge: velg TransferClient for store filer, eller øk en kjent avgrenset JSON-grense etter behov.
-- Outbox stopper: sjekk blocked head/notBefore/maxAttempts. Flush er eksplisitt; ingen automatisk timer/reachability watcher starter.
-- Realtime bufferOverflow: consumer er for treg; coalesce/reduser eventarbeid eller bruk passende kapasitet og backendresume.
-- Background ferdig men UI mangler data: les receipts, ikke bare live onEvent. Kall OS completion ved finished-events callback.
-
-Benchmark og Thread Sanitizer er ikke en allerede verifisert kontrakt i denne håndboken. Mål filvolum, storestørrelse og reconnect-belastning for appenes faktiske trafikk før tuning.
+Benchmark and Thread Sanitizer results are not yet a published support contract. Measure workloads representative of the consuming application.
