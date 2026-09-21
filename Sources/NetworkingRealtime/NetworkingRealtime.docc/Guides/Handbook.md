@@ -12,9 +12,7 @@ Denne dokumentasjonen beskriver alle fire biblioteksproduktene og de offentlige 
 | [Offline og synkronisering](Sync.md) | Vedvarende outbox, idempotency, ordering, retry og konfliktgrenser |
 | [Tredjepartsintegrasjoner](Integrations.md) | API-key, signing, Basic-adaptere, form, GraphQL og presignerte URL-er |
 | [Sikkerhet og grenser](Security.md) | HTTPS, redirects, credentials, storage, ressursgrenser og personvern |
-| [Testing og drift](Testing.md) | Deterministiske adapters, lokale fixtures, CI, dokumentasjonsbygg og feilsøking |
-| [Git og GitHub](Repository.md) | Repository-filer, publisering, CI, tilgang og rettigheter |
-| [Migrering og release](Migration.md) | API-endringer, oppgradering og releasekontrakt |
+| [Testing og feilsøking](Testing.md) | Testadaptere, integrasjonstester og feilsøking |
 | [Komplett API-referanse](API.md) | Alle offentlige symboler og deklarasjoner, generert fra Swift-modulene |
 
 ## Hva pakken kan brukes til
@@ -33,8 +31,8 @@ Bibliotekene er backend-agnostiske. Ingen produkter definerer dine DTO-er, login
 
 ## Plattform og distribusjon
 
-Swift 6.0+, iOS 17+, macOS 13+. Foundation/URLSession brukes; ingen eksterne biblioteksavhengigheter. Andre plattformer og Linux er ikke en verifisert supportkontrakt. Bakgrunnsoverføringer krever en faktisk app og OS-lifecycle-integrasjon. Pakken er ikke publisert eller tagget av denne endringen.
+Versjon 0.3.0 bruker Swift 6.0+ og støtter iOS 17+ og macOS 13+. Foundation/URLSession brukes; ingen eksterne biblioteksavhengigheter. Andre plattformer og Linux er ikke en verifisert supportkontrakt. Bakgrunnsoverføringer krever en faktisk app og OS-lifecycle-integrasjon.
 
 API-signaturene i API.md er autoritative for den bygde versjonen. Eksemplene bruker syntetiske origins og må tilpasses ditt API. Kode i Tests/NetworkingIntegrationTests/DocumentationExamples.swift kompilerer sentrale håndbokeksempler uten å kontakte offentlige servere.
 
-Se [arkitekturen](Architecture.md) for ansvarsdeling, eierskap og regler for videreutvikling.
+Se [arkitekturen](Architecture.md) for ansvarsdeling og eierskap.

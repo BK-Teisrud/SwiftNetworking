@@ -6,4 +6,4 @@ Bruk GitHubs private vulnerability reporting dersom repositoryets eier har aktiv
 
 Oppgi berørt versjon/commit, forventet og faktisk oppførsel, en minimal reproduksjon med syntetiske data og mulig konsekvens. Se [sikkerhetskontraktene](Docs/Security.md) for pakkens grenser.
 
-Ingen release er publisert ennå. En vedlikeholds- og støtteperiode må fastsettes ved første release.
+Sikkerhetsrettelser prioriteres for den nyeste publiserte 0.x-versjonen. Det gis ingen langsiktig støttegaranti for eldre 0.x-versjoner.

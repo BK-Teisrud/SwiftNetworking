@@ -22,7 +22,6 @@ Bakgrunnssesjoner følger redirects automatisk i Apple-systemet og krever ekspli
 - <doc:Integrations>
 - <doc:Security>
 - <doc:Testing>
-- <doc:Migration>
 - <doc:API>
 
 ### Offentlige symboler

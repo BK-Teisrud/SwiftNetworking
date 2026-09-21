@@ -213,8 +213,7 @@ func checkDistribution() throws {
   try directory(package)
   defer { try? files.removeItem(at: temporary) }
   for name in [
-    "Sources", "Tests", "Docs", "Tools", "Package.swift", "README.md", "CHANGELOG.md", "LICENSE",
-    "CONTRIBUTING.md", "SECURITY.md",
+    "Sources", "Tests", "Docs", "Tools", "Package.swift", "README.md", "LICENSE", "SECURITY.md",
   ] {
     try files.copyItem(
       at: repository.appendingPathComponent(name), to: package.appendingPathComponent(name))

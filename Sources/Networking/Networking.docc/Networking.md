@@ -20,7 +20,6 @@ Den komplette norske håndboken ligger i Docs/README.md i repositoryet. Den besk
 - <doc:Integrations>
 - <doc:Security>
 - <doc:Testing>
-- <doc:Migration>
 - <doc:API>
 
 ### Offentlige symboler

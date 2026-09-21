@@ -1,4 +1,4 @@
-# Arkitektur og videreutvikling
+# Arkitektur
 
 ## Produkter og avhengigheter
 
@@ -37,8 +37,8 @@ Bruk HTTPRequestPreparing for request-/Auth-adaptere og FileTransferTransport fo
 
 Tester følger produktene: NetworkingTests, NetworkingTransfersTests, NetworkingRealtimeTests og NetworkingSyncTests. NetworkingIntegrationTests kompilerer håndbokeksempler og tester ekte foreground URLSession mot loopback på macOS. Core- og Sync-testtargets kan ikke utilsiktet hente de valgfrie modulene via dependencies.
 
-Nye features skal legges hos mekanismen som eier dem og testes ved dens kontrakt. Appens service eier kontoendring, DTO-/domenemapping, chat acknowledgements/resume og offline konfliktløsning. Et nytt produkt eller en generell middleware-kjede bør først innføres når et konkret gjenbruksbehov krever det.
+Appens service eier kontoendring, DTO-/domenemapping, chat acknowledgements/resume og offline konfliktløsning.
 
 Filstore gjenbruker JSON-encoding for uendrede items mellom atomiske writes. Encoding-cache og snapshot oppdateres sammen først når write lykkes; version-1 filformatet beholdes.
 
-HTTPRequest eier én intern RequestPath (encoded eller segments). Public path/pathSegments-getters og begge init-overloads er beholdt. Delte standardverdier kommer fra options-typenes standard-instans. DocC-guider følger distribusjonen som synkroniserte kopier; felles nettverksfeilkategorier erstatter ikke de opprinnelige error-payloadene.
+HTTPRequest eier én intern RequestPath (encoded eller segments). Public path/pathSegments-getters og begge init-overloads er beholdt. Delte standardverdier kommer fra options-typenes standard-instans. Felles nettverksfeilkategorier erstatter ikke de opprinnelige error-payloadene.

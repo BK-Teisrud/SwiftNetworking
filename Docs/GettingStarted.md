@@ -2,7 +2,13 @@
 
 ## Installasjon
 
-I Xcode velger du Add Package Dependencies og ditt repository, eller Add Local for denne mappen. Velg produktene appen trenger. URL og versjon kan ikke fylles inn med en påstått release som ikke finnes.
+I Xcode velger du Add Package Dependencies og legger til:
+
+```text
+https://github.com/BK-Teisrud/SwiftNetworking.git
+```
+
+Velg versjon 0.3.0 eller `Up to Next Minor Version` fra 0.3.0, og velg produktene appen trenger. Repositoryet er proprietært; konsumenten og eventuell CI må ha nødvendig tilgang.
 
 For en annen Swift Package bruker du en lokal dependency:
 
@@ -16,7 +22,16 @@ For en annen Swift Package bruker du en lokal dependency:
 .product(name: "NetworkingSync", package: "Networking")
 ```
 
-For et remote repository erstatter du path-dependency med din faktiske URL og en eksisterende tag/ref. Produktnavnene er de samme. REST-only apper trenger bare Networking. Transfers og Realtime avhenger av Networking. Sync er selvstendig; modulene avhenger ikke av hverandre.
+For en remote Swift Package dependency bruker du:
+
+```swift
+.package(
+    url: "https://github.com/BK-Teisrud/SwiftNetworking.git",
+    .upToNextMinor(from: "0.3.0")
+)
+```
+
+Produktnavnene er de samme. REST-only apper trenger bare Networking. Transfers og Realtime avhenger av Networking. Sync er selvstendig; modulene avhenger ikke av hverandre.
 
 ## Første JSON-kall
 

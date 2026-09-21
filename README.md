@@ -1,8 +1,8 @@
 # Networking
 
-Gjenbrukbare Swift-biblioteker for HTTP/JSON, filoverføring, WebSocket og en vedvarende offline-outbox. Swift 6.0+, iOS 17+, macOS 13+. Foundation/URLSession, uten eksterne biblioteksavhengigheter.
+Gjenbrukbare Swift-biblioteker for HTTP/JSON, filoverføring, WebSocket og en vedvarende offline-outbox. Versjon 0.3.0. Swift 6.0+, iOS 17+, macOS 13+. Foundation/URLSession, uten eksterne biblioteksavhengigheter.
 
-**[Les den komplette håndboken](Docs/README.md)** — installasjon, alle bruksområder, API-kontrakter, eksempler, feil, sikkerhet, app-lifecycle, tester og migrering.
+**[Les den komplette håndboken](Docs/README.md)** — installasjon, alle bruksområder, API-kontrakter, eksempler, feil, sikkerhet, app-lifecycle og testing.
 
 | Produkt | Bruk |
 | --- | --- |
@@ -39,11 +39,10 @@ Bruk decode for JSON, data for bytes, execute for metadata/204 og prepare for ko
 - [Offline/outbox og synkronisering](Docs/Sync.md)
 - [Tredjepartsadaptere og modul-workflows](Docs/Integrations.md)
 - [Sikkerhet og personvern](Docs/Security.md)
-- [Testing, drift og dokumentasjonsbygg](Docs/Testing.md)
-- [Migrering og release](Docs/Migration.md)
+- [Testing og feilsøking](Docs/Testing.md)
 - [Alle offentlige API-deklarasjoner](Docs/API.md)
 
-DocC-catalogs finnes for alle produkter. `swift Tools/RepositoryTools.swift docs` genererer API-referanse og DocC-arkiver lokalt, uten publishing. Sentrale håndbokeksempler kompileres i testtargetet.
+DocC-kataloger finnes for alle produkter. Sentrale håndbokeksempler kompileres i testtargetet.
 
 ## Viktige kontrakter
 
@@ -62,8 +61,8 @@ swift test
 
 Ingen offentlige backends brukes i testsuiten. Lokale macOS-fixtures verifiserer ekte URLSession, cache/kontobytte, filoverføringer og WebSocket-handshake. Testene trenger lokale socketrettigheter i sandkasser. CI dekker minimum Swift 6.0, nyere toolchain og iOS-simulator. Bakgrunn/relaunch må dessuten verifiseres i faktiske apper på enhet.
 
-Ingen release eller tag er publisert. Se [CHANGELOG](CHANGELOG.md) og migreringskapitlet før oppgradering; særlig HTTPMethod, cache-/redirect-policy og tidligere NetworkingError payloads har endret kontrakt.
+Gjeldende offentlige API er versjonert som 0.3.0. Før 1.0 kan nye minorversjoner inneholde kildekodebrytende endringer i tråd med Semantic Versioning.
 
-## Repository og rettigheter
+## Rettigheter og sikkerhet
 
-Se [GitHub-oppsett og publisering](Docs/Repository.md), [videreutvikling](CONTRIBUTING.md) og [sikkerhetsrapportering](SECURITY.md). Copyright © 2026 Teisrud Development AS. Alle rettigheter forbeholdt; se [LICENSE](LICENSE).
+Se [sikkerhetsrapportering](SECURITY.md). Copyright © 2026 Teisrud Development AS. Alle rettigheter forbeholdt; se [LICENSE](LICENSE).

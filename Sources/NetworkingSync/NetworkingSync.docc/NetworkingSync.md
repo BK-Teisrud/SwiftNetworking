@@ -22,7 +22,6 @@ App/backend eier deduplisering og konfliktregler. Ingen exactly-once-garanti, kr
 - <doc:Integrations>
 - <doc:Security>
 - <doc:Testing>
-- <doc:Migration>
 - <doc:API>
 
 ### Offentlige symboler
