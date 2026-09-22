@@ -76,35 +76,24 @@ public final class BackgroundTransferManager: Sendable {
     }
   }
   public func tasks() async -> [BackgroundTransferTask] {
-    await withCheckedContinuation { continuation in
-      session.getAllTasks { tasks in
-        continuation.resume(
-          returning: tasks.map {
-            let download = $0 is URLSessionDownloadTask
-            let total = download ? $0.countOfBytesExpectedToReceive : $0.countOfBytesExpectedToSend
-            return .init(
-              taskIdentifier: $0.taskIdentifier,
-              jobID: $0.taskDescription.flatMap(UUID.init(uuidString:)),
-              completedBytes: download ? $0.countOfBytesReceived : $0.countOfBytesSent,
-              expectedBytes: total >= 0 ? total : nil)
-          })
-      }
+    await session.allTasks.map { task in
+      let download = task is URLSessionDownloadTask
+      let total = download ? task.countOfBytesExpectedToReceive : task.countOfBytesExpectedToSend
+      return .init(
+        taskIdentifier: task.taskIdentifier,
+        jobID: task.taskDescription.flatMap(UUID.init(uuidString:)),
+        completedBytes: download ? task.countOfBytesReceived : task.countOfBytesSent,
+        expectedBytes: total >= 0 ? total : nil)
     }
   }
   public func cancel(jobID: UUID) async {
-    await withCheckedContinuation { continuation in
-      session.getAllTasks { tasks in
-        for task in tasks where task.taskDescription == jobID.uuidString { task.cancel() }
-        continuation.resume()
-      }
+    for task in await session.allTasks where task.taskDescription == jobID.uuidString {
+      task.cancel()
     }
   }
   public func cancelAll() async {
-    await withCheckedContinuation { continuation in
-      session.getAllTasks { tasks in
-        for task in tasks { task.cancel() }
-        continuation.resume()
-      }
+    for task in await session.allTasks {
+      task.cancel()
     }
   }
   /// Reads persisted completions, including completions received while no UI listener existed.
