@@ -31,7 +31,7 @@ The libraries are backend-agnostic. They do not define your DTOs, login UI, data
 
 ## Platform and distribution
 
-Version 0.3.0 requires Swift 6.0+ and supports iOS 17+ and macOS 13+. It uses Foundation and URLSession with no external package dependencies. Other platforms, including Linux, are not verified support contracts. Background transfers require integration with a real application and operating-system lifecycle.
+Version 0.3.1 requires Swift 6.0+ and supports iOS 17+ and macOS 13+. It uses Foundation and URLSession with no external package dependencies. Other platforms, including Linux, are not verified support contracts. Background transfers require integration with a real application and operating-system lifecycle.
 
 The declarations in `API.md` are authoritative for the built version. Examples use synthetic origins and must be adapted to your API. `Tests/NetworkingIntegrationTests/DocumentationExamples.swift` compiles the central examples without contacting public servers.
 

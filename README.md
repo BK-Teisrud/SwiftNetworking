@@ -1,6 +1,6 @@
 # Networking
 
-Reusable Swift libraries for HTTP/JSON, file transfers, WebSocket connections, and a persistent offline outbox. Version 0.3.0. Swift 6.0+, iOS 17+, and macOS 13+. Built on Foundation and URLSession with no external package dependencies.
+Reusable Swift libraries for HTTP/JSON, file transfers, WebSocket connections, and a persistent offline outbox. Version 0.3.1. Swift 6.0+, iOS 17+, and macOS 13+. Built on Foundation and URLSession with no external package dependencies.
 
 **[Read the complete handbook](Docs/README.md)** for installation, use cases, API contracts, examples, errors, security, application lifecycle, and testing.
 
@@ -61,7 +61,7 @@ swift test
 
 The test suite uses no public backends. Local macOS fixtures verify real URLSession behavior, cache and account changes, file transfers, and WebSocket handshakes. Sandboxed environments must permit loopback sockets. CI covers the minimum Swift 6.0 toolchain, a current toolchain, and an iOS simulator. Background relaunch behavior must also be verified in a real application on a physical device.
 
-The current public API is versioned as 0.3.0. Before 1.0, minor releases may contain source-breaking changes in accordance with Semantic Versioning.
+The current public API is versioned as 0.3.1. Before 1.0, minor releases may contain source-breaking changes in accordance with Semantic Versioning.
 
 ## License and security
 

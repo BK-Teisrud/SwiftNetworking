@@ -8,14 +8,14 @@ In Xcode, choose **Add Package Dependencies** and add:
 https://github.com/BK-Teisrud/SwiftNetworking.git
 ```
 
-Select version 0.3.0, or **Up to Next Minor Version** from 0.3.0, then select the products your application needs.
+Select version 0.3.1, or **Up to Next Minor Version** from 0.3.1, then select the products your application needs.
 
 From another Swift package:
 
 ```swift
 .package(
     url: "https://github.com/BK-Teisrud/SwiftNetworking.git",
-    .upToNextMinor(from: "0.3.0")
+    .upToNextMinor(from: "0.3.1")
 )
 
 // In the target dependencies:
